@@ -117,12 +117,10 @@ const App: React.FC = () => {
                              message.serverContent?.outputTranscription?.text;
 
             if (textChunk) {
-              // Finish current response even if Answering mode is toggled ON mid-generation.
-              // Only skip if Answering mode is ALREADY ON before the generation begins.
+              // When Answering is on, start fresh so only this turn’s full answer is shown
               if (isUserAnsweringRef.current && !responseInProgressRef.current) {
-                return;
+                streamingTextRef.current = '';
               }
-
               responseInProgressRef.current = true;
               streamingTextRef.current += textChunk;
               setActiveResponse({
@@ -153,14 +151,21 @@ const App: React.FC = () => {
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           thinkingConfig: { thinkingBudget: 0 },
-          systemInstruction: `STRICT OPERATIONAL DIRECTIVE:
-1. IDENTITY: You are Jarvis, a Senior Principal Software Architect and Technical Fellow.
-2. OBJECTIVE: Provide high-level technical mentorship and architectural blueprints.
-3. DEPTH: For every query, conduct a "Deep Dive". Explain underlying theory, trade-offs, and first principles (e.g., CAP Theorem, Distributed System Fallacies, SOLID, DDD, CQRS).
-4. CODE: Mandatory high-quality code blocks. Show full implementation details, not just snippets. Include unit tests or configuration files (YAML, JSON) if relevant. Use Markdown (C#, TypeScript, SQL, Bash).
-5. STRUCTURE: Use headers (e.g., # Theory, # Implementation) and bulleted lists for maximum clarity.
-6. NO CONVERSATIONAL FILLERS: Start immediately with the technical payload. No "I can help" or "Here is the explanation".
-7. CONTEXT: ${resumeContent || 'N/A'}`,
+          systemInstruction: `You are Jarvis, a Senior Principal Software Architect who explains things like a human mentor, not a textbook or a generic AI.
+
+TONE AND STYLE:
+- Explain the way a skilled colleague would: clear, warm, and conversational. Avoid stiff or robotic phrasing.
+- Prefer plain language. When you need a technical term, introduce it naturally and say what it means in simple words (e.g. "eventually consistent" = "different parts of the system can lag a bit before they all agree").
+- Use analogies and real-world comparisons when they help. No need to sound formal or academic.
+- Stay thorough and accurate, but write like you're talking to someone, not like you're writing documentation. Vary your sentence length; don't fall into a repetitive, list-heavy pattern.
+
+CONTENT:
+- Be substantially detailed (aim for 500-1000+ words). Cover the idea, why it matters, trade-offs, and how it shows up in practice. Explain the "why" and "when" as much as the "what."
+- Use headers and lists only when they help clarity. Do not use bold markdown (**).
+- Include at least one full code block (TypeScript, C#, SQL, or Bash) with real implementation detail where it fits.
+- End with a concrete example: one practical code example or scenario that ties everything together.
+
+Do not start with phrases like "I can help" or "Here is the explanation." Jump straight into the content. CONTEXT: ${resumeContent || 'N/A'}`,
         }
       });
       sessionRef.current = await sessionPromise;
@@ -209,11 +214,11 @@ const App: React.FC = () => {
       </header>
 
       <main className="flex-1 overflow-hidden bg-white relative">
-        <div className="h-full overflow-y-auto px-10 pt-24 pb-48 no-scrollbar scroll-smooth">
+        <div className="h-full overflow-y-auto px-6 pt-12 pb-24 no-scrollbar scroll-smooth">
           <div className="max-w-4xl mx-auto w-full">
             {currentQuestion && (
-              <div className="mb-12 animate-in fade-in slide-in-from-top-4 duration-500 max-w-2xl border-l-2 border-neutral-100 pl-6 py-1">
-                <span className={`text-[8px] font-bold uppercase tracking-[0.4em] block mb-2 ${isUserAnswering ? 'text-orange-500' : 'text-neutral-300'}`}>
+              <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-500 max-w-2xl border-l-2 border-neutral-100 pl-4 py-0.5">
+                <span className={`text-[8px] font-bold uppercase tracking-[0.4em] block mb-1 ${isUserAnswering ? 'text-orange-500' : 'text-neutral-300'}`}>
                   {isUserAnswering ? 'Observation Stream' : 'Input Fragment'}
                 </span>
                 <p className="text-sm font-medium tracking-tight italic leading-relaxed text-neutral-400">
