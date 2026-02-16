@@ -1,0 +1,7 @@
+{
+  "name": "Jarvis",
+  "description": "A high-intelligence real-time voice assistant specialized in software architecture and technical leadership.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
