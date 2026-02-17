@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { TranscriptionItem, LiveSessionState } from './types';
 import { createBlob } from './utils/audioUtils';
 import ResponseDisplay from './components/ResponseDisplay';
@@ -291,6 +292,7 @@ Do not start with phrases like "I can help" or "Here is the explanation." Jump s
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+      <SpeedInsights />
     </div>
   );
 };
