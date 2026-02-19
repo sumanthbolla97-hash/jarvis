@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TranscriptionItem } from '../types';
 
 interface ResponseDisplayProps {
@@ -125,7 +125,7 @@ const ResponseDisplay: React.FC<ResponseDisplayProps> = ({ item }) => {
         if (para.includes('\n* ') || para.includes('\n- ') || para.startsWith('* ') || para.startsWith('- ')) {
           const lines = para.split('\n');
           return (
-            <ul key={`${sectionIdx}-${paraIdx}`} className="space-y-1.5 mb-3 ml-5 list-disc text-neutral-800 text-base sm:text-lg leading-relaxed">
+            <ul key={`${sectionIdx}-${paraIdx}`} className="space-y-1.5 mb-3 ml-5 list-disc text-neutral-800 text-sm sm:text-base leading-relaxed">
               {lines.map((line, lineIdx) => {
                 const cleanLine = line.replace(/^[\*\-]\s*/, '');
                 return <li key={lineIdx}>{renderSpans(cleanLine)}</li>;
@@ -135,7 +135,7 @@ const ResponseDisplay: React.FC<ResponseDisplayProps> = ({ item }) => {
         }
 
         return (
-          <p key={`${sectionIdx}-${paraIdx}`} className="mb-3 last:mb-0 text-neutral-900 text-base sm:text-xl font-medium leading-relaxed tracking-tight antialiased">
+          <p key={`${sectionIdx}-${paraIdx}`} className="mb-3 last:mb-0 text-neutral-900 text-sm sm:text-lg font-medium leading-relaxed tracking-tight antialiased">
             {renderSpans(para)}
           </p>
         );
@@ -143,8 +143,13 @@ const ResponseDisplay: React.FC<ResponseDisplayProps> = ({ item }) => {
     });
   };
 
-  const sections = extractSections(item.text);
-  const cleanTechnicalDefinition = dedupeTechnicalDefinition(sections.TECHNICAL_DEFINITION || 'N/A');
+  const sections = useMemo(() => extractSections(item.text), [item.text]);
+  const cleanTechnicalDefinition = useMemo(() => {
+    const raw = sections.TECHNICAL_DEFINITION || 'N/A';
+    // Prioritize low-latency rendering while streaming.
+    if (!item.isComplete) return raw;
+    return dedupeTechnicalDefinition(raw);
+  }, [item.isComplete, sections.TECHNICAL_DEFINITION]);
 
   const renderSpans = (text: string) => {
     return text.split(/(\*\*.*?\*\*)/g).map((part, i) => {

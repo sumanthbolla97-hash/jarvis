@@ -85,19 +85,17 @@ const App: React.FC = () => {
     const lockedTopic = lockedTopicRef.current || currentQuestionRef.current;
 
     sessionRef.current.sendRealtimeInput({
-      text: `AUTO TASK:
-CONTINUATION_MODE
-Continue ONLY the latest locked topic and provide deeper explanation in English.
-Topic lock: ${lockedTopic || 'Use the most recent user discussion context.'}
-Do not change topic.
-Do not restart from scratch.
-Output in this sequence:
-[TECHNICAL_DEFINITION]
-[EXPLANATION]
+      text: `AUTO TASK CONTINUATION:
+Topic lock: ${lockedTopic || 'Use the latest user discussion context.'}
+English only.
+Fast output required.
+Output in this exact order:
+[TECHNICAL_DEFINITION] (first line immediately, max 25 words)
+[EXPLANATION] (crisp and practical, minimum 120 words)
 [EXAMPLES]
 [FLOW_DIAGRAM]
-Ensure [TECHNICAL_DEFINITION] is complete and fully written every time, even in Answering mode.
-Expand the current explanation with practical .NET full-stack details.`
+Use Knowledge Layer context directly for project-specific points.
+Continue same topic only.`
     });
   };
 
@@ -112,6 +110,13 @@ Expand the current explanation with practical .NET full-stack details.`
         lockedTopicRef.current = latestTopic;
       }
       responseInProgressRef.current = false;
+      setActiveResponse({
+        id: 'stream',
+        role: 'model',
+        text: '[TECHNICAL_DEFINITION]\nGenerating...',
+        timestamp: Date.now(),
+        isComplete: false
+      });
       triggerAutoAnswer();
     } else {
       // Reset the screen state when leaving Answering mode so new questions start cleanly.
@@ -206,7 +211,7 @@ Expand the current explanation with practical .NET full-stack details.`
           onopen: () => {
             setSessionState({ isActive: true, isConnecting: false, error: null });
             const source = inputCtx.createMediaStreamSource(stream);
-            const scriptProcessor = inputCtx.createScriptProcessor(2048, 1, 1);
+            const scriptProcessor = inputCtx.createScriptProcessor(1024, 1, 1);
             scriptProcessorRef.current = scriptProcessor;
             scriptProcessor.onaudioprocess = (e) => {
               // Pause live mic transcription while answering mode is enabled.
@@ -304,26 +309,23 @@ Expand the current explanation with practical .NET full-stack details.`
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           thinkingConfig: { thinkingBudget: 0 },
-          systemInstruction: `MANDATORY RULES FOR EVERY RESPONSE:
-1. ENGLISH ONLY: Always respond only in English.
-2. ENGLISH TRANSCRIPTION: Treat all spoken input as English transcription output.
-3. WORD COUNT: Minimum 300 words for every reply, mandatory.
-4. TONE: Explain like a .NET full-stack developer with 5 years of hands-on experience: practical, clear, human, and implementation-focused.
-5. DEFINITIONS: Keep definitions technically correct but simple and real-world, not robotic or academic.
-6. ORDER MANDATORY: Start with Technical Definition first, then Explanation.
-7. OUTPUT FORMAT MANDATORY: Use these exact section labels in order:
+          systemInstruction: `MANDATORY RULES:
+1. English only.
+2. Fast response is required.
+3. Output order:
 [TECHNICAL_DEFINITION]
 [EXPLANATION]
 [EXAMPLES]
 [FLOW_DIAGRAM]
-8. FOR EVERY QUESTION: Provide a direct answer, why it matters, and practical implementation steps.
-9. EXAMPLES: Include at least 2 concrete code examples when relevant.
-10. FLOW DIAGRAMS: Include an ASCII flow diagram when architecture or process explanation is relevant. If not applicable, write "N/A".
-11. PARALLEL SECTIONS MANDATORY: After [TECHNICAL_DEFINITION], generate [EXPLANATION], [EXAMPLES], and [FLOW_DIAGRAM] as complete parallel sections in the same response.
-12. NON-EMPTY SECTIONS MANDATORY: Never leave [EXPLANATION], [EXAMPLES], or [FLOW_DIAGRAM] empty.
-13. STRUCTURE: Use readable paragraphs with proper sentence spacing.
-14. ANSWERING MODE: If prompt includes CONTINUATION_MODE, still provide a full and complete [TECHNICAL_DEFINITION], then [EXPLANATION], [EXAMPLES], and [FLOW_DIAGRAM].
-15. STYLE: Clear, practical, implementation-focused, and conversational.
+4. Stream [TECHNICAL_DEFINITION] first and immediately in 1-2 short sentences.
+5. [EXPLANATION] must be crisp, practical, and at least 120 words.
+6. Include one short code example and one short ASCII flow diagram.
+7. Do not change topic unless user asks.
+8. Use readable sentence spacing.
+9. For project-related queries, integrate Knowledge Layer context directly in [TECHNICAL_DEFINITION], [EXPLANATION], and [EXAMPLES].
+10. Prioritize low latency while preserving clarity.
+9. If user asks anything about the project, you must integrate Knowledge Layer context directly into the answer.
+10. For project-related questions, generate real-time, project-specific examples grounded in that Knowledge Layer context.
 
 CONTEXT: ${resumeContent || 'N/A'}`,
         }
